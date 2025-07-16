@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${usuario.id == null ? 'Añadir Nuevo Usuario' : 'Editar Usuario'}">Formulario de Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { padding-top: 20px; }
+        .container { max-width: 600px; }
+    </style>
+</head>
+<body data-bs-theme="dark">
+<div class="container">
+    <h1 class="mb-4" th:text="${usuario.id == null ? 'Añadir Nuevo Usuario' : 'Editar Usuario'}"></h1>
+
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <form th:action="@{/admin/usuarios/guardar}" th:object="${usuario}" method="post">
+        <input type="hidden" th:field="*{id}" />
+
+        <div class="mb-3">
+            <label for="username" class="form-label">Username:</label>
+            <input type="text" id="username" th:field="*{username}" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Contraseña:</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   th:placeholder="${usuario.id != null ? 'Dejar vacío para no cambiar' : ''}"
+                   th:required="${usuario.id == null}" />
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Email:</label>
+            <input type="email" id="email" th:field="*{email}" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input type="text" id="nombre" th:field="*{nombres}" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="apellido" class="form-label">Apellido:</label>
+            <input type="text" id="apellido" th:field="*{apellidos}" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label for="rol" class="form-label">Rol:</label>
+            <select id="rol" th:field="*{rol}" class="form-select" required>
+                <option value="">Seleccionar Rol</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="USER">USER</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2">Guardar Usuario</button>
+        <a th:href="@{/admin/usuarios/lista}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

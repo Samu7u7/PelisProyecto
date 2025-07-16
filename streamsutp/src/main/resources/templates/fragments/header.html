@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<div th:fragment="navbar">
+    <header class="bg-dark text-white py-6">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand fw-bold" th:href="@{/}">StreamsUTP</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/}">INICIO</a></li>
+
+                        <li class="nav-item" sec:authorize="isAnonymous()"><a class="nav-link" th:href="@{/ingreso}">INGRESA</a></li>
+                        <li class="nav-item" sec:authorize="isAnonymous()"><a class="nav-link" th:href="@{/registro}">SUSCRÍBETe AHORA</a></li>
+
+                        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/perfil}">MI PERFIL</a></li>
+
+                        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/usuario/historial_ordenes}">MIS ÓRDENES</a></li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/usuarios/lista}">ADMIN USUARIOS</a></li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/ventas}">ADMIN VENTAS</a></li>
+
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
+                            <form th:action="@{/logout}" method="post" style="display:inline;">
+                                <button type="submit" class="nav-link btn btn-link text-decoration-none" style="color:white; padding: 0.5rem 1rem;">CERRAR SESIÓN</button>
+                            </form>
+                        </li>
+
+                        <li class="nav-item"><a class="nav-link" th:href="@{/nosotros}">SOBRE NOSOTROS</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/#contactos}">CONTÁCTENOS</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+</div>
+
+</body>
+</html>
