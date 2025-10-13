@@ -1,7 +1,10 @@
 package com.streamsutp.streamsutp.service;
 
-import com.streamsutp.streamsutp.model.Usuario;
-import com.streamsutp.streamsutp.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -11,9 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import com.streamsutp.streamsutp.model.Usuario;
+import com.streamsutp.streamsutp.repository.UserRepository;
 
 @Service
 public class UsuarioService implements UserDetailsService {
@@ -116,5 +118,10 @@ public class UsuarioService implements UserDetailsService {
 
     public void deleteUsuario(Long id) {
         userRepository.deleteById(id);
+    }
+
+    //usuarios(todos) con sub activa
+    public List<Usuario> findSubscribedUsers() {
+        return userRepository.findUsersWithActiveSubscription(LocalDateTime.now());
     }
 }

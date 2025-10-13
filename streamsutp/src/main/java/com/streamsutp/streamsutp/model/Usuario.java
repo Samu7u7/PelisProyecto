@@ -1,23 +1,32 @@
 package com.streamsutp.streamsutp.model;
 
-import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity; // Importa para @EqualsAndHashCode.Exclude
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue; // Importa para @ToString.Exclude
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table; // Para inicializar la lista de ordenes
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.EqualsAndHashCode; // Importa para @EqualsAndHashCode.Exclude
-import lombok.ToString; // Importa para @ToString.Exclude
-
-// --- Importaciones de Spring Security para UserDetails ---
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import java.util.ArrayList; // Para inicializar la lista de ordenes
-import java.util.Collection;
-import java.util.List;
+import lombok.ToString;
 // --------------------------------------------------------
 
 @Entity
@@ -45,17 +54,17 @@ public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENT
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
+    @Transient // Indica que este campo no se mapeará a una columna en la base de datos
+    private String repetirPassword;
+
     @NotBlank(message = "El correo es obligatorio")
     @Email(message = "Debe ser un correo válido")
     @Pattern(regexp = "^[\\w.-]+@gmail\\.com$", message = "El correo debe ser un gmail válido")
     @Column(unique = true) // Añadido 'unique = true' para el email si no lo tenías
     private String email;
 
-    @NotBlank(message = "El plan es obligatorio")
-    private String plan;
-
-    @Transient // Indica que este campo no se mapeará a una columna en la base de datos
-    private String repetirPassword;
+    //@Transient // Indica que este campo no se mapeará a una columna en la base de datos
+    //private String repetirPassword;
 
     @Column(nullable = false) // 'rol' no puede ser nulo, asumimos que siempre tendrá un valor
     private String rol;
@@ -73,6 +82,13 @@ public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENT
     // --- IMPLEMENTACIÓN DE LOS MÉTODOS DE UserDetails ---
     // Lombok (@Data) ya provee los getters para 'username' y 'password'.
     // Los demás métodos deben ser implementados explícitamente.
+
+    // Relaciones con subscripciones
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Subscripcion> subscripciones = new ArrayList<>();
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -113,5 +129,11 @@ public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENT
     public void addOrden(Orden orden) {
         this.ordenes.add(orden);
         orden.setUsuario(this); // Asegura que la orden también conozca a su usuario
+    }
+
+    // Ayuda a mantener la bidireccionalidad con Subscripcion
+    public void addSubscripcion(Subscripcion subscripcion) {
+        this.subscripciones.add(subscripcion);
+        subscripcion.setUsuario(this);
     }
 }

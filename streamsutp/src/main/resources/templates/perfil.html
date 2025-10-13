@@ -14,7 +14,7 @@
         <h4 th:text="${usuario.nombres + ' ' + usuario.apellidos}">Nombre de Usuario</h4>
         <p><strong>Usuario:</strong> <span th:text="${usuario.username}"></span></p>
         <p><strong>Correo Electrónico:</strong> <span th:text="${usuario.email}"></span></p>
-        <p><strong>Plan:</strong> <span th:text="${usuario.plan}"></span></p>
+        <!--<p><strong>Plan:</strong> <span th:text="${usuario.plan}"></span></p>-->
         <p><strong>Rol:</strong> <span th:text="${usuario.rol}"></span></p> </div>
     <div sec:authorize="isAnonymous()" class="alert alert-warning text-center" role="alert">
         No has iniciado sesión. Por favor, <a th:href="@{/ingreso}">inicia sesión aquí</a>.

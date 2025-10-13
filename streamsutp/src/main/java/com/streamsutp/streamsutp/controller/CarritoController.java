@@ -1,14 +1,12 @@
 package com.streamsutp.streamsutp.controller;
 
-import com.streamsutp.streamsutp.model.CarritoItem;
-import com.streamsutp.streamsutp.model.Usuario;
-import com.streamsutp.streamsutp.model.Pelicula;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-import com.streamsutp.streamsutp.service.OrdenService;
-import com.streamsutp.streamsutp.service.PeliculaService;
-import com.streamsutp.streamsutp.service.UsuarioService;
-
-import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,13 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.streamsutp.streamsutp.model.CarritoItem;
+import com.streamsutp.streamsutp.model.Pelicula;
+import com.streamsutp.streamsutp.model.Usuario;
+import com.streamsutp.streamsutp.service.OrdenService;
+import com.streamsutp.streamsutp.service.PeliculaService;
+import com.streamsutp.streamsutp.service.UsuarioService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory; 
+import jakarta.servlet.http.HttpSession; 
 
 @Controller
 @RequestMapping("/carrito")
@@ -46,14 +45,14 @@ public class CarritoController {
     @PostMapping("/agregar")
     public String agregarAlCarrito(@RequestParam Long peliculaId,
                                    @RequestParam String titulo,
-                                   @RequestParam String tipo,
+                                   @RequestParam(defaultValue = "comprar") String tipo,
                                    @RequestParam String imagen,
                                    @RequestParam(defaultValue = "1") int cantidad,
                                    HttpSession session,
                                    RedirectAttributes redirectAttributes) {
 
-        if (!tipo.equalsIgnoreCase("alquiler") && !tipo.equalsIgnoreCase("comprar")) {
-            redirectAttributes.addFlashAttribute("error", "Tipo de venta inválido.");
+        if (!tipo.equalsIgnoreCase("comprar") ) {
+            redirectAttributes.addFlashAttribute("error", "Sólo se permite compra de películas.");
             return "redirect:/";
         }
 
@@ -64,15 +63,18 @@ public class CarritoController {
         }
         Pelicula pelicula = peliculaOpt.get();
 
-        BigDecimal precioReal;
-        if (tipo.equalsIgnoreCase("alquiler")) {
-            precioReal = pelicula.getPrecioAlquilar();
-        } else if (tipo.equalsIgnoreCase("comprar")) {
-            precioReal = pelicula.getPrecioComprar();
-        } else {
-            redirectAttributes.addFlashAttribute("error", "Tipo de venta no especificado o inválido.");
-            return "redirect:/";
-        }
+        BigDecimal precioReal = pelicula.getPrecioComprar();
+
+        //BigDecimal precioReal;
+        //if (tipo.equalsIgnoreCase("alquiler")) {
+        //    precioReal = pelicula.getPrecioAlquilar();
+        //} else if (tipo.equalsIgnoreCase("comprar")) {
+        //    precioReal = pelicula.getPrecioComprar();
+        //} else {
+        //    redirectAttributes.addFlashAttribute("error", "Tipo de venta no especificado o inválido.");
+        //    return "redirect:/";
+       // }
+
 
         List<CarritoItem> carrito = (List<CarritoItem>) session.getAttribute("carrito");
 

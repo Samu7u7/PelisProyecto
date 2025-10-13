@@ -1,10 +1,22 @@
 package com.streamsutp.streamsutp.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
@@ -39,13 +51,22 @@ public class DetalleOrden {
     private BigDecimal subtotal;
 
     // Constructor personalizado para inicializar el subtotal
-    public DetalleOrden(Orden orden, Pelicula pelicula, Integer cantidad, BigDecimal precioUnitario, TipoVenta tipoVenta) { // <--- ¡CAMBIO AQUÍ en el parámetro!
+    public DetalleOrden(Orden orden, Pelicula pelicula, Integer cantidad,
+                        BigDecimal precioUnitario, TipoVenta tipoVenta) {
         this.orden = orden;
-        this.pelicula = pelicula; // <--- ¡CAMBIO AQUÍ!
+        this.pelicula = pelicula;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
         this.tipoVenta = tipoVenta;
-        this.subtotal = precioUnitario.multiply(new BigDecimal(cantidad));
+        this.subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void calcularSubtotal() {
+        if (precioUnitario != null && cantidad != null) {
+            this.subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
+        }
     }
 
     // El resto de getters y setters son generados por Lombok @Data.

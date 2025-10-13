@@ -44,6 +44,7 @@
             <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
             <div class="text-danger" th:if="${emailExistsError}" th:text="${emailExistsError}"></div>
         </div>
+        <!--
         <div class="mb-3">
             <label class="form-label">Plan</label>
             <select th:field="*{plan}" class="form-select">
@@ -53,6 +54,8 @@
             </select>
             <div class="text-danger" th:if="${#fields.hasErrors('plan')}" th:errors="*{plan}"></div>
         </div>
+        -->
+
         <input type="hidden" th:field="*{rol}" value="USER" />
 
         <button type="submit" class="btn btn-primary w-100">Registrarse</button>

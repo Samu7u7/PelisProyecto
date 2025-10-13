@@ -1,16 +1,23 @@
 package com.streamsutp.streamsutp.service;
 
-import com.streamsutp.streamsutp.model.*;
-import com.streamsutp.streamsutp.repository.DetalleOrdenRepository;
-import com.streamsutp.streamsutp.repository.OrdenRepository;
-import com.streamsutp.streamsutp.repository.PeliculaRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.streamsutp.streamsutp.model.CarritoItem;
+import com.streamsutp.streamsutp.model.DetalleOrden;
+import com.streamsutp.streamsutp.model.EstadoOrden;
+import com.streamsutp.streamsutp.model.Orden;
+import com.streamsutp.streamsutp.model.Pelicula;
+import com.streamsutp.streamsutp.model.TipoVenta;
+import com.streamsutp.streamsutp.model.Usuario;
+import com.streamsutp.streamsutp.repository.DetalleOrdenRepository;
+import com.streamsutp.streamsutp.repository.OrdenRepository;
+import com.streamsutp.streamsutp.repository.PeliculaRepository;
 
 @Service
 public class OrdenService {
@@ -47,28 +54,30 @@ public class OrdenService {
             Pelicula pelicula = peliculaService.obtenerPeliculaPorId(item.getPeliculaId())
                     .orElseThrow(() -> new RuntimeException("Película no encontrada con ID: " + item.getPeliculaId()));
 
-            if (pelicula.getStock() < item.getCantidad()) {
-                throw new IllegalStateException("No hay suficiente stock para la película: " + pelicula.getTitulo());
-            }
+            //if (pelicula.getStock() < item.getCantidad()) {
+            //    throw new IllegalStateException("No hay suficiente stock para la película: " + pelicula.getTitulo());
+            //}
 
             // Lógica para determinar el precio según el tipo de venta
-            BigDecimal precioUnitario;
-            TipoVenta tipoVenta;
-            try {
-                tipoVenta = TipoVenta.valueOf(item.getTipo().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Tipo de venta no válido para la película " + item.getTitulo() + ": " + item.getTipo());
-            }
+            BigDecimal precioUnitario=pelicula.getPrecioComprar();
+            
+            TipoVenta tipoVenta = TipoVenta.valueOf(item.getTipo().toUpperCase());
 
-            if (tipoVenta == TipoVenta.ALQUILER) {
-                precioUnitario = pelicula.getPrecioAlquilar();
-            } else {
-                precioUnitario = pelicula.getPrecioComprar();
-            }
+            //try {
+            //    tipoVenta = TipoVenta.valueOf(item.getTipo().toUpperCase());
+            //} catch (IllegalArgumentException e) {
+            //    throw new IllegalArgumentException("Tipo de venta no válido para la película " + item.getTitulo() + ": " + item.getTipo());
+            //}
+
+            //if (tipoVenta == TipoVenta.ALQUILER) {
+            //    precioUnitario = pelicula.getPrecioAlquilar();
+            //} else {
+            //    precioUnitario = pelicula.getPrecioComprar();
+            //}
             // Fin de la lógica de precio
 
-            pelicula.setStock(pelicula.getStock() - item.getCantidad());
-            peliculaRepository.save(pelicula);
+            //pelicula.setStock(pelicula.getStock() - item.getCantidad());
+            //peliculaRepository.save(pelicula);
 
             DetalleOrden detalle = new DetalleOrden(nuevaOrden, pelicula, item.getCantidad(), precioUnitario, tipoVenta);
             nuevaOrden.addDetalle(detalle);
@@ -84,11 +93,11 @@ public class OrdenService {
         Orden orden = ordenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se encontró la orden para eliminar: " + id));
 
-        for (DetalleOrden detalle : orden.getDetalles()) {
-            Pelicula pelicula = detalle.getPelicula();
-            pelicula.setStock(pelicula.getStock() + detalle.getCantidad());
-            peliculaRepository.save(pelicula);
-        }
+        //for (DetalleOrden detalle : orden.getDetalles()) {
+        //    Pelicula pelicula = detalle.getPelicula();
+        //    pelicula.setStock(pelicula.getStock() + detalle.getCantidad());
+        //    peliculaRepository.save(pelicula);
+        //}
 
         ordenRepository.delete(orden);
     }

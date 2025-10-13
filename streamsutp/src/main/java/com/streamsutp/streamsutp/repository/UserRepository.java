@@ -1,10 +1,15 @@
 package com.streamsutp.streamsutp.repository;
 
-import com.streamsutp.streamsutp.model.Usuario; // Asegúrate de que esta importación sea correcta
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional; // Asegúrate de que esta importación sea correcta
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional; // ¡¡¡IMPORTA ESTO!!!
+import com.streamsutp.streamsutp.model.Usuario; // ¡¡¡IMPORTA ESTO!!!
 
 @Repository
 public interface UserRepository extends JpaRepository<Usuario, Long> {
@@ -15,4 +20,9 @@ public interface UserRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByUsername(String username); // <--- ¡Añade o modifica esta línea!
     Optional<Usuario> findByEmail(String email);       // <--- ¡Añade esta línea si no la tienes!
+
+
+    @Query("""
+      select u from Usuario u join u.subscripciones s where s.status = 'ACTIVE' and s.fechaFin > :now""")
+    List<Usuario> findUsersWithActiveSubscription(@Param("now") LocalDateTime now);
 }
