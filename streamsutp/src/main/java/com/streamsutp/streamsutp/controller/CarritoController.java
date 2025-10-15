@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,7 +50,8 @@ public class CarritoController {
                                    @RequestParam String imagen,
                                    @RequestParam(defaultValue = "1") int cantidad,
                                    HttpSession session,
-                                   RedirectAttributes redirectAttributes) {
+                                   RedirectAttributes redirectAttributes,
+                                   @RequestHeader(value = "referer", required = false) final String referer) {
 
         if (!tipo.equalsIgnoreCase("comprar") ) {
             redirectAttributes.addFlashAttribute("error", "Sólo se permite compra de películas.");
@@ -89,6 +91,9 @@ public class CarritoController {
         String mensaje = "¡Película '" + titulo + "' " + accion + " correctamente! Se ha añadido al carrito.";
         redirectAttributes.addFlashAttribute("mensaje", mensaje);
 
+        if (referer != null && !referer.isBlank()) {
+            return "redirect:" + referer;
+        }
         return "redirect:/";
     }
 
