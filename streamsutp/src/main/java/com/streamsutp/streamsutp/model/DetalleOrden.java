@@ -1,56 +1,49 @@
 package com.streamsutp.streamsutp.model;
 
-import java.math.BigDecimal;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "detalles_orden")
-@Data // Genera getters, setters, toString, equals y hashCode
-@NoArgsConstructor // Genera un constructor sin argumentos
+@Data
+@NoArgsConstructor
 public class DetalleOrden {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // Esta puede seguir siendo LAZY porque es una referencia "hacia atrás"
     @JoinColumn(name = "id_orden", nullable = false)
-    @ToString.Exclude // Evita recursión infinita
-    @EqualsAndHashCode.Exclude // Evita recursión infinita
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonBackReference("orden-detalles")
     private Orden orden;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_pelicula", nullable = false) // <--- ¡CAMBIO AQUÍ! Ahora apunta a 'id_pelicula'
-    @ToString.Exclude // Evita recursión infinita
-    @EqualsAndHashCode.Exclude // Evita recursión infinita
-    private Pelicula pelicula; // <--- ¡CAMBIO AQUÍ! El tipo de objeto ahora es Pelicula
+    // CAMBIO A EAGER: Forzamos la carga inmediata de la película para evitar errores de Lazy Loading.
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_pelicula", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference("pelicula-detalles")
+    private Pelicula pelicula;
 
     private Integer cantidad;
 
-    private BigDecimal precioUnitario; // Precio del producto al momento de la compra
+    private BigDecimal precioUnitario;
 
     @Enumerated(EnumType.STRING)
     private TipoVenta tipoVenta;
 
     private BigDecimal subtotal;
 
-    // Constructor personalizado para inicializar el subtotal
     public DetalleOrden(Orden orden, Pelicula pelicula, Integer cantidad,
                         BigDecimal precioUnitario, TipoVenta tipoVenta) {
         this.orden = orden;
@@ -68,10 +61,4 @@ public class DetalleOrden {
             this.subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
         }
     }
-
-    // El resto de getters y setters son generados por Lombok @Data.
-    // Si necesitas algún getter/setter específico que Lombok no maneje bien, lo añadirías manualmente.
-    // Ejemplo:
-    // public Pelicula getPelicula() { return pelicula; }
-    // public void setPelicula(Pelicula pelicula) { this.pelicula = pelicula; }
 }

@@ -1,42 +1,33 @@
 package com.streamsutp.streamsutp.model;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType; // Importa EqualsAndHashCode
-import jakarta.persistence.Enumerated; // Importa ToString
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "ordenes")
-@Data // Genera getters, setters, toString, equals y hashCode
-@NoArgsConstructor // Genera un constructor sin argumentos
+@Data
+@NoArgsConstructor
 public class Orden {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // CAMBIO A EAGER: Forzamos la carga inmediata del usuario para evitar errores de Lazy Loading.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_usuario", nullable = false)
-    @ToString.Exclude // Evita recursión infinita en toString
-    @EqualsAndHashCode.Exclude // Evita recursión infinita en equals/hashCode
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference
     private Usuario usuario;
 
     private LocalDateTime fechaOrden;
@@ -46,18 +37,15 @@ public class Orden {
 
     @Column(name = "estado_orden", nullable = false)
     @Enumerated(EnumType.STRING)
-    private EstadoOrden estadoOrden= EstadoOrden.PENDIENTE;
+    private EstadoOrden estadoOrden = EstadoOrden.PENDIENTE;
 
-    //private String direccionEnvio;
-    //private String ciudadEnvio;
-    //private String codigoPostalEnvio;
-
-    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Evita recursión infinita en toString
-    @EqualsAndHashCode.Exclude // Evita recursión infinita en equals/hashCode
+    // CAMBIO A EAGER: Forzamos la carga inmediata de los detalles para evitar errores de Lazy Loading.
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference("orden-detalles")
     private List<DetalleOrden> detalles = new ArrayList<>();
 
-    // Constructor personalizado para inicializar fecha y estado por defecto
     public Orden(Usuario usuario, BigDecimal totalOrden) {
         this.usuario = usuario;
         this.fechaOrden = LocalDateTime.now();
@@ -65,7 +53,6 @@ public class Orden {
         this.estadoOrden = EstadoOrden.PENDIENTE;
     }
 
-    // Método de utilidad para añadir detalles a la orden
     public void addDetalle(DetalleOrden detalle) {
         this.detalles.add(detalle);
         detalle.setOrden(this);
