@@ -32,7 +32,7 @@
     .btn-play { min-width: 260px; padding:14px 28px; font-size:18px; font-weight:700; }
     /* Mantener pequeño margen superior para el botón de compra cuando está debajo */
     .btn-buy { margin-top:6px; }
-    
+    /* Precio dentro del botón: un poco más pequeño para jerarquía visual */
     .btn-price { font-size:14px; }
     /* Estilo específico para el botón Comprar: degradado amarillo/ámbar (#ffc107) */
     .btn-buy-style {
@@ -65,8 +65,9 @@
         }
 
         @media (max-width: 768px) {
-            
-            
+            /* En móviles el bloque ocupa todo el ancho (como el carrusel) */
+            /* Mantener la portada pegada arriba: recortada desde el tope */
+            /* En móviles mantener cover para evitar bandas negras y recortar desde arriba */
             .hero { min-height: 55vh; background-position: right top; background-size: cover; }
                 /* Bajar ligeramente el contenido en móviles para mejorar equilibrio visual */
                 .hero-content { width:100%; padding:24px 18px; transform: translateY(12%); }
