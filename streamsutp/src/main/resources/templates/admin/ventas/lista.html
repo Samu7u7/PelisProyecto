@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración de Ventas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
+</head>
 <body>
     <div class="container my-5">
         <h1 class="mb-4 text-center">Lista de Órdenes</h1>
 
+        <!-- Mensajes de alerta -->
         <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
             <span th:text="${mensaje}"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -20,11 +21,30 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <div th:if="${ordenes.isEmpty()}" class="alert alert-info text-center">
+        <!-- Formulario de Filtro -->
+        <div class="card bg-light p-3 mb-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label for="filtroEstado" class="form-label">Filtrar por Estado:</label>
+                    <select id="filtroEstado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="PENDIENTE">PENDIENTE</option>
+                        <option value="PROCESADA">PROCESADA</option>
+                        <option value="COMPLETADA">COMPLETADA</option>
+                        <option value="CANCELADA">CANCELADA</option>
+                    </select>
+                </div>
+                <div class="col-md-auto d-flex align-items-end">
+                    <button id="btnFiltrar" class="btn btn-primary">Filtrar</button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${ordenes.isEmpty()}" id="mensajeSinOrdenes" class="alert alert-info text-center">
             <p>No hay órdenes registradas en el sistema.</p>
         </div>
 
-        <div th:unless="${ordenes.isEmpty()}">
+        <div id="contenedorTabla" th:unless="${ordenes.isEmpty()}">
             <table class="table table-striped table-hover table-bordered">
                 <thead class="table-dark">
                     <tr>
@@ -36,22 +56,26 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tablaOrdenesBody">
+                    <!-- El contenido de esta tabla se genera inicialmente en el servidor -->
+                    <!-- y se actualiza dinámicamente con JavaScript -->
                     <tr th:each="orden : ${ordenes}">
                         <td th:text="${orden.id}"></td>
                         <td th:text="${orden.usuario.username}"></td>
                         <td th:text="${#temporals.format(orden.fechaOrden, 'dd-MM-yyyy HH:mm')}"></td>
                         <td th:text="${#numbers.formatCurrency(orden.totalOrden)}"></td>
                         <td>
-                            <span th:classappend="${orden.estadoOrden == 'PENDIENTE' ? 'badge bg-warning text-dark' : 
-                                                    (orden.estadoOrden == 'COMPLETADA' ? 'badge bg-success' : 
-                                                    (orden.estadoOrden == 'CANCELADA' ? 'badge bg-danger' : 'badge bg-secondary'))}"
+                            <span th:classappend="${orden.estadoOrden.name() == 'PENDIENTE' ? 'badge bg-warning text-dark' : 
+                                                    (orden.estadoOrden.name() == 'COMPLETADA' ? 'badge bg-success' : 
+                                                    (orden.estadoOrden.name() == 'CANCELADA' ? 'badge bg-danger' : 'badge bg-secondary'))}"
                                   th:text="${orden.estadoOrden}">
                             </span>
                         </td>
                         <td>
-                            <a th:href="@{/admin/ventas/{id}(id=${orden.id})}" class="btn btn-info btn-sm">Ver Detalles</a>
-                            <form th:action="@{/admin/ventas/eliminar/{id}(id=${orden.id})}" method="post" class="d-inline ms-2">
+                            <!-- CAMBIO: Actualizamos la URL para que apunte a la nueva ruta de la UI -->
+                            <a th:href="@{/admin/ventas-ui/{id}(id=${orden.id})}" class="btn btn-info btn-sm">Ver Detalles</a>
+                            <!-- CAMBIO: Actualizamos la URL para que apunte a la nueva ruta de la UI -->
+                            <form th:action="@{/admin/ventas-ui/eliminar/{id}(id=${orden.id})}" method="post" class="d-inline ms-2">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta orden?');">Eliminar</button>
                             </form>
                         </td>
@@ -66,5 +90,168 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnFiltrar = document.getElementById('btnFiltrar');
+            const filtroEstado = document.getElementById('filtroEstado');
+            const tablaBody = document.getElementById('tablaOrdenesBody');
+            const contenedorTabla = document.getElementById('contenedorTabla');
+            const mensajeSinOrdenes = document.getElementById('mensajeSinOrdenes');
+
+            btnFiltrar.addEventListener('click', async function () {
+                try {
+                    const estado = filtroEstado.value;
+                    const url = new URL('/api/admin/ventas', window.location.origin);
+
+                    if (estado) {
+                        url.searchParams.append('estado', estado);
+                    }
+
+                    const response = await fetch(url);
+                    const contentType = response.headers.get('content-type');
+
+                    if (!response.ok) {
+                        const errorText = contentType && contentType.includes('application/json')
+                            ? (await response.json()).message
+                            : await response.text();
+                        throw new Error(errorText || 'Error en la respuesta del servidor');
+                    }
+
+                    const data = await response.json();
+                    if (!Array.isArray(data)) {
+                        throw new Error('Formato de respuesta inválido');
+                    }
+
+                    actualizarTabla(data);
+                } catch (error) {
+                    console.error('Error al filtrar órdenes:', error);
+                    mostrarError(`Error al filtrar las órdenes: ${error.message || 'Por favor, intente nuevamente.'}`);
+                }
+            });
+
+            function actualizarTabla(data) {
+                const tablaBody = document.getElementById('tablaOrdenesBody');
+                const contenedorTabla = document.getElementById('contenedorTabla');
+                const mensajeSinOrdenes = document.getElementById('mensajeSinOrdenes');
+
+                if (!tablaBody) {
+                    console.error('No se encontró el elemento tablaOrdenesBody');
+                    return;
+                }
+
+                // Limpiar el contenido actual de la tabla
+                tablaBody.innerHTML = '';
+
+                // Crear mensaje "sin órdenes" si no existe
+                let mensajeSinOrdenesElement = mensajeSinOrdenes;
+                if (!mensajeSinOrdenesElement) {
+                    mensajeSinOrdenesElement = document.createElement('div');
+                    mensajeSinOrdenesElement.id = 'mensajeSinOrdenes';
+                    mensajeSinOrdenesElement.className = 'alert alert-info text-center';
+                    mensajeSinOrdenesElement.innerHTML = '<p>No hay órdenes registradas en el sistema.</p>';
+                    tablaBody.parentElement.parentElement.insertBefore(mensajeSinOrdenesElement, tablaBody.parentElement);
+                }
+
+                // Manejar visibilidad de elementos
+                if (data.length === 0) {
+                    if (contenedorTabla) contenedorTabla.style.display = 'none';
+                    mensajeSinOrdenesElement.style.display = 'block';
+                    return;
+                } else {
+                    if (contenedorTabla) contenedorTabla.style.display = 'block';
+                    mensajeSinOrdenesElement.style.display = 'none';
+                }
+
+                const currencyFormatter = new Intl.NumberFormat('es-PE', {
+                    style: 'currency',
+                    currency: 'PEN'
+                });
+
+                data.forEach(orden => {
+                    if (!orden || !orden.id || !orden.usuario || !orden.estadoOrden) {
+                        console.warn('Orden con datos incompletos:', orden);
+                        return;
+                    }
+
+                    const fecha = new Date(orden.fechaOrden).toLocaleString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    let estadoBadgeClass = 'badge bg-secondary';
+                    switch(orden.estadoOrden) {
+                        case 'PENDIENTE':
+                            estadoBadgeClass = 'badge bg-warning text-dark';
+                            break;
+                        case 'PROCESADA':
+                            estadoBadgeClass = 'badge bg-info';
+                            break;
+                        case 'COMPLETADA':
+                            estadoBadgeClass = 'badge bg-success';
+                            break;
+                        case 'CANCELADA':
+                            estadoBadgeClass = 'badge bg-danger';
+                            break;
+                    }
+
+                    const row = `
+                        <tr>
+                            <td>${orden.id}</td>
+                            <td>${orden.usuario.username}</td>
+                            <td>${fecha}</td>
+                            <td>${currencyFormatter.format(orden.totalOrden)}</td>
+                            <td><span class="${estadoBadgeClass}">${orden.estadoOrden}</span></td>
+                            <td>
+                                <a href="/admin/ventas-ui/${orden.id}" class="btn btn-info btn-sm">Ver Detalles</a>
+                                <form action="/admin/ventas-ui/eliminar/${orden.id}" method="post" class="d-inline ms-2">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                            onclick="return confirm('¿Estás seguro de eliminar esta orden?');">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    `;
+                    tablaBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+
+            function mostrarError(mensaje) {
+                // Buscar el contenedor donde insertaremos el mensaje
+                const container = document.querySelector('.container');
+                const card = document.querySelector('.card');
+
+                if (!container || !card) {
+                    console.error('No se encontraron los elementos necesarios para mostrar el error');
+                    return;
+                }
+
+                // Remover alertas de error anteriores
+                const alertasAnteriores = document.querySelectorAll('.alert-danger');
+                alertasAnteriores.forEach(alerta => alerta.remove());
+
+                const alertaError = document.createElement('div');
+                alertaError.className = 'alert alert-danger alert-dismissible fade show';
+                alertaError.role = 'alert';
+                alertaError.innerHTML = `
+                    ${mensaje}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                container.insertBefore(alertaError, card);
+
+                // Auto-ocultar el mensaje después de 5 segundos
+                setTimeout(() => {
+                    if (alertaError.parentNode) {
+                        alertaError.remove();
+                    }
+                }, 5000);
+            }
+        });
+    </script>
 </body>
 </html>

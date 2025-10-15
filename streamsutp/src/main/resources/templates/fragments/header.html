@@ -69,7 +69,8 @@
                             </ul>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/usuarios/lista}">ADMIN USUARIOS</a></li>
-                        <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/ventas}">ADMIN VENTAS</a></li>
+                        <!-- CAMBIO: Actualizamos la URL para que apunte a la nueva ruta de la UI -->
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/ventas-ui}">ADMIN VENTAS</a></li>
 
                         
 

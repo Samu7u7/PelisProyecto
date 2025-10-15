@@ -8,15 +8,17 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity; // Importa para @EqualsAndHashCode.Exclude
+import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue; // Importa para @ToString.Exclude
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table; // Para inicializar la lista de ordenes
+import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -27,14 +29,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-// --------------------------------------------------------
 
 @Entity
 @Table(name="usuarios")
-@Data // Anotación de Lombok para generar getters, setters, toString, equals y hashCode
-@NoArgsConstructor // Anotación de Lombok para generar un constructor sin argumentos
-@AllArgsConstructor // Anotación de Lombok para generar un constructor con todos los argumentos
-public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENTA UserDetails!
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +47,7 @@ public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENT
     @NotBlank(message = "Los nombres son obligatorios")
     private String nombres;
 
-    @Column(name="username", unique = true) // Añadido 'unique = true' si no lo tenías antes
+    @Column(name="username", unique = true)
     @NotBlank(message = "El usuario es obligatorio")
     private String username;
 
@@ -54,84 +55,61 @@ public class Usuario implements UserDetails { // <--- ¡AQUÍ ES DONDE IMPLEMENT
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
-    @Transient // Indica que este campo no se mapeará a una columna en la base de datos
+    @Transient
     private String repetirPassword;
 
     @NotBlank(message = "El correo es obligatorio")
     @Email(message = "Debe ser un correo válido")
     @Pattern(regexp = "^[\\w.-]+@gmail\\.com$", message = "El correo debe ser un gmail válido")
-    @Column(unique = true) // Añadido 'unique = true' para el email si no lo tenías
+    @Column(unique = true)
     private String email;
 
-    //@Transient // Indica que este campo no se mapeará a una columna en la base de datos
-    //private String repetirPassword;
-
-    @Column(nullable = false) // 'rol' no puede ser nulo, asumimos que siempre tendrá un valor
+    @Column(nullable = false)
     private String rol;
 
-    // --- RELACIÓN ONE-TO-MANY CON ORDENES ---
-    // Un usuario puede tener muchas órdenes.
-    // 'mappedBy' indica el nombre del campo en la clase 'Orden' que es el dueño de la relación (el lado ManyToOne).
-    // 'cascade = CascadeType.ALL' significa que si se elimina un usuario, se eliminan todas sus órdenes.
-    // 'orphanRemoval = true' significa que si una orden se desvincula de un usuario, se elimina de la BD.
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Evita recursión infinita cuando Lombok genera toString()
-    @EqualsAndHashCode.Exclude // Evita recursión infinita cuando Lombok genera equals() y hashCode()
-    private List<Orden> ordenes = new ArrayList<>(); // Se inicializa para evitar NullPointerExceptions
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonBackReference // ROMPE EL BUCLE: Cuando se serializa un Usuario, esta lista no se incluye en el JSON.
+    private List<Orden> ordenes = new ArrayList<>();
 
-    // --- IMPLEMENTACIÓN DE LOS MÉTODOS DE UserDetails ---
-    // Lombok (@Data) ya provee los getters para 'username' y 'password'.
-    // Los demás métodos deben ser implementados explícitamente.
-
-    // Relaciones con subscripciones
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonBackReference("usuario-subscripciones") // Usamos un nombre para diferenciar de la otra referencia
     private List<Subscripcion> subscripciones = new ArrayList<>();
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Convierte el String 'rol' del usuario a una colección de GrantedAuthority.
-        // Spring Security espera que los roles comiencen con "ROLE_" (ej. "ROLE_USER", "ROLE_ADMIN").
         return List.of(new SimpleGrantedAuthority("ROLE_" + rol));
     }
 
-    // @Override public String getPassword() { return this.password; } // Lombok @Data ya lo genera
-    // @Override public String getUsername() { return this.username; } // Lombok @Data ya lo genera
-
     @Override
     public boolean isAccountNonExpired() {
-        // Indica si la cuenta del usuario no ha expirado. Para la mayoría de apps, es siempre true.
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        // Indica si la cuenta del usuario no está bloqueada. Para la mayoría de apps, es siempre true.
         return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        // Indica si las credenciales (contraseña) del usuario no han expirado. Para la mayoría de apps, es siempre true.
         return true;
     }
 
     @Override
     public boolean isEnabled() {
-        // Indica si el usuario está habilitado. Para la mayoría de apps, es siempre true.
         return true;
     }
 
-    // --- Método de utilidad para añadir órdenes a la lista del usuario (opcional pero recomendado) ---
-    // Este método ayuda a mantener la bidireccionalidad de la relación.
     public void addOrden(Orden orden) {
         this.ordenes.add(orden);
-        orden.setUsuario(this); // Asegura que la orden también conozca a su usuario
+        orden.setUsuario(this);
     }
 
-    // Ayuda a mantener la bidireccionalidad con Subscripcion
     public void addSubscripcion(Subscripcion subscripcion) {
         this.subscripciones.add(subscripcion);
         subscripcion.setUsuario(this);
